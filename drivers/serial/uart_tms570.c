@@ -145,13 +145,13 @@ static inline int is_ready(uintptr_t reg_base, uint32_t mask)
  *
  * @param dev
  * @param c Buffer where incoming character is stored
- * @return int Always 0
  */
 static int uart_tms570_poll_in(const struct device *dev, unsigned char *c)
 {
         uintptr_t reg_base = DEVICE_MMIO_GET(dev);
 
-        while (!is_ready(reg_base, RXRDY_BIT)) {
+        if (!is_ready(reg_base, RXRDY_BIT)) {
+                return -1;
         }
 
         *c = (unsigned char)sys_read32(reg_base + RDBUF_OFFSET);
