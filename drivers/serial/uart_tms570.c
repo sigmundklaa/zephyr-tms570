@@ -202,12 +202,12 @@ static int uart_tms570_fifo_read(const struct device *dev, uint8_t *buf, const i
 
 static void uart_tms570_irq_tx_enable(const struct device *dev)
 {
-        sys_set_bits(DEVICE_MMIO_GET(dev) + SETINT_OFFSET, TXINT_BIT);
+        sys_write32(TXINT_BIT, DEVICE_MMIO_GET(dev) + SETINT_OFFSET);
 }
 
 static void uart_tms570_irq_tx_disable(const struct device *dev)
 {
-        sys_set_bits(DEVICE_MMIO_GET(dev) + CLEARINT_OFFSET, TXINT_BIT);
+        sys_write32(TXINT_BIT, DEVICE_MMIO_GET(dev) + CLEARINT_OFFSET);
 }
 
 static int uart_tms570_irq_tx_ready(const struct device *dev)
@@ -222,12 +222,12 @@ static int uart_tms570_irq_tx_complete(const struct device *dev)
 
 static void uart_tms570_irq_rx_enable(const struct device *dev)
 {
-        sys_set_bits(DEVICE_MMIO_GET(dev) + SETINT_OFFSET, RXINT_BIT);
+        sys_write32(RXINT_BIT, DEVICE_MMIO_GET(dev) + SETINT_OFFSET);
 }
 
 static void uart_tms570_irq_rx_disable(const struct device *dev)
 {
-        sys_set_bits(DEVICE_MMIO_GET(dev) + CLEARINT_OFFSET, RXINT_BIT);
+        sys_write32(RXINT_BIT, DEVICE_MMIO_GET(dev) + CLEARINT_OFFSET);
 }
 
 static int uart_tms570_irq_rx_ready(const struct device *dev)
@@ -237,12 +237,12 @@ static int uart_tms570_irq_rx_ready(const struct device *dev)
 
 static void uart_tms570_irq_err_enable(const struct device *dev)
 {
-        sys_set_bits(DEVICE_MMIO_GET(dev) + SETINT_OFFSET, ERRINT_BITS);
+        sys_write32(ERRINT_BITS, DEVICE_MMIO_GET(dev) + SETINT_OFFSET);
 }
 
 static void uart_tms570_irq_err_disable(const struct device *dev)
 {
-        sys_set_bits(DEVICE_MMIO_GET(dev) + CLEARINT_OFFSET, ERRINT_BITS);
+        sys_write32(ERRINT_BITS, DEVICE_MMIO_GET(dev) + CLEARINT_OFFSET);
 }
 
 static int uart_tms570_irq_is_pending(const struct device *dev)
@@ -706,7 +706,7 @@ static void uart_tms570_async_init(const struct device *dev)
         k_work_init_delayable(&data->dma_tx.timeout_work, async_tx_timeout);
         k_work_init_delayable(&data->dma_tx.done_work, async_tx_done);
 
-        sys_set_bits(reg_base + SETINT_OFFSET, RXDMA_BITS | TXDMA_BIT);
+        sys_write32(RXDMA_BITS | TXDMA_BIT, reg_base + SETINT_OFFSET);
 }
 
 #endif
