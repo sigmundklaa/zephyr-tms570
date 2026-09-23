@@ -252,11 +252,6 @@ static int uart_tms570_irq_is_pending(const struct device *dev)
         return is_ready(reg_base, TXRDY_BIT) || is_ready(reg_base, RXRDY_BIT);
 }
 
-static void uart_tms570_irq_update(const struct device *dev)
-{
-        ARG_UNUSED(dev);
-}
-
 static void uart_tms570_irq_callback_set(const struct device *dev, uart_irq_callback_user_data_t cb,
                                          void *user_data)
 {
@@ -653,7 +648,6 @@ static DEVICE_API(uart, uart_tms570_driver_api) = {
         .irq_err_enable = uart_tms570_irq_err_enable,
         .irq_err_disable = uart_tms570_irq_err_disable,
         .irq_is_pending = uart_tms570_irq_is_pending,
-        .irq_update = uart_tms570_irq_update,
         .irq_callback_set = uart_tms570_irq_callback_set,
 #endif
 
