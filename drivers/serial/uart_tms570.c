@@ -636,7 +636,7 @@ static void uart_tms570_async_tx_isr(const struct device *dma, void *user_data, 
 
 #endif
 
-static const struct uart_driver_api uart_tms570_driver_api = {
+static DEVICE_API(uart, uart_tms570_driver_api) = {
         .poll_in = uart_tms570_poll_in,
         .poll_out = uart_tms570_poll_out,
 

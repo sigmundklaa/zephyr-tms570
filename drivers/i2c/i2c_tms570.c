@@ -742,7 +742,7 @@ static int i2c_tms570_target_unregister(const struct device *dev, struct i2c_tar
 }
 #endif
 
-static const struct i2c_driver_api i2c_tms570_driver_api = {
+static DEVICE_API(i2c, i2c_tms570_driver_api) = {
         .transfer = i2c_tms570_transfer,
         .configure = i2c_tms570_configure,
         .get_config = i2c_tms570_get_config,

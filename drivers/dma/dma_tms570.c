@@ -622,7 +622,7 @@ static void dma_tms570_irq_connect(const struct device *dev)
 #endif
 }
 
-static const struct dma_driver_api dma_tms570_driver_api = {
+static DEVICE_API(dma, dma_tms570_driver_api) = {
         .config = dma_tms570_config,
         .reload = dma_tms570_reload,
         .start = dma_tms570_start,

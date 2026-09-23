@@ -183,7 +183,7 @@ static int clock_init(const struct device *dev)
         return 0;
 }
 
-static const struct clock_control_driver_api clock_api = {
+static DEVICE_API(clock_control, clock_api) = {
         .on = clock_on,
         .off = clock_off,
         .get_rate = clock_get_rate,
