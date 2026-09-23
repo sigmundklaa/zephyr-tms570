@@ -83,9 +83,9 @@ static int gpio_tms570_pin_configure(const struct device *dev, gpio_pin_t pin, g
                 }
 
                 if (flags & GPIO_OUTPUT_INIT_LOW) {
-                        sys_set_bit(cfg->reg_base + PORT_DCLR_OFFSET, pin);
+                        sys_write32(BIT(pin), cfg->reg_base + PORT_DCLR_OFFSET);
                 } else {
-                        sys_set_bit(cfg->reg_base + PORT_DSET_OFFSET, pin);
+                        sys_write32(BIT(pin), cfg->reg_base + PORT_DSET_OFFSET);
                 }
         }
 
@@ -176,7 +176,7 @@ static int gpio_tms570_pin_interrupt_configure(const struct device *dev, gpio_pi
         bit = port_to_bit(dev, pin);
         status = 0;
 
-        sys_set_bit(reg_base + INTENACLR_OFFSET, bit);
+        sys_write32(BIT(bit), reg_base + INTENACLR_OFFSET);
 
         if (mode == GPIO_INT_MODE_LEVEL || (trig & GPIO_INT_TRIG_WAKE) != 0) {
                 return -ENOTSUP;
@@ -200,7 +200,7 @@ static int gpio_tms570_pin_interrupt_configure(const struct device *dev, gpio_pi
                 }
         }
 
-        sys_set_bit(reg_base + INTENASET_OFFSET, bit);
+        sys_write32(BIT(bit), reg_base + INTENASET_OFFSET);
         return status;
 }
 
