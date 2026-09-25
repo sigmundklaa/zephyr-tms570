@@ -32,4 +32,20 @@
     /omit-if-no-ref/ spi2_ncs_1: spi2_ncs_29_1 {
         pinmux = <TMS570_PINMUX(29, 1)>;
     };
+
+    /omit-if-no-ref/ spi4_clk: spi4_clk_5_1 {
+        pinmux = <TMS570_PINMUX(5, 1)>;
+    };
+
+    /omit-if-no-ref/ spi4_mosi: spi4_mosi_5_9 {
+        pinmux = <TMS570_PINMUX(5, 9)>;
+    };
+
+    /omit-if-no-ref/ spi4_miso: spi4_miso_5_17 {
+        pinmux = <TMS570_PINMUX(5, 17)>;
+    };
+
+    /omit-if-no-ref/ spi4_ncs_0: spi4_ncs_4_25 {
+        pinmux = <TMS570_PINMUX(4, 25)>;
+    };
 };
