@@ -557,7 +557,7 @@ static int dma_tms570_init(const struct device *dev)
                     ctrl_reg_base + PCTRL_OFFSET);
 
         sys_write32(UINT32_MAX, ctrl_reg_base + PAR0_OFFSET);
-        sys_write32(UINT32_MAX, ctrl_reg_base + PAR0_OFFSET);
+        sys_write32(UINT32_MAX, ctrl_reg_base + PAR1_OFFSET);
 
         status = force_arbitration(dev, 0);
         if (status != 0) {
