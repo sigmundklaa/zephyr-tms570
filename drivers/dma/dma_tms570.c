@@ -18,7 +18,8 @@ LOG_MODULE_REGISTER(dma_tms570);
 #define HWCHENAR_OFFSET   (0x1c)  /* HW Channel enable reset */
 #define SWCHENAS_OFFSET   (0x24)  /* SW Channel enable set */
 #define SWCHENAR_OFFSET   (0x2c)  /* SW Channel enable reset */
-#define CHPRIOR_OFFSET    (0x3c)  /* Channel priority */
+#define CHPRIOS_OFFSET    (0x34)  /* Channel priority set */
+#define CHPRIOR_OFFSET    (0x3c)  /* Channel priority reset */
 #define GCHIENAS_OFFSET   (0x44)  /* Global channel interrupt enable */
 #define GCHIENAR_OFFSET   (0x4c)  /* Global channel interrupt disable */
 #define REQASI_OFFSET     (0x54)  /* Request assignment offset */
@@ -305,8 +306,13 @@ static void set_prio(const struct device *dev, uint32_t ch_id, uint8_t prio)
 
         ctrl_reg_base = DEVICE_MMIO_NAMED_GET(dev, control);
 
-        sys_clear_bits(ctrl_reg_base + CHPRIOR_OFFSET, 1 << ch_id);
-        sys_set_bits(ctrl_reg_base + CHPRIOR_OFFSET, 1 << ch_id);
+        if (prio != 0) {
+                /* High priority */
+                sys_write32(BIT(ch_id), ctrl_reg_base + CHPRIOS_OFFSET);
+        } else {
+                /* Low priority */
+                sys_write32(BIT(ch_id), ctrl_reg_base + CHPRIOR_OFFSET);
+        }
 }
 
 static void assign_request(const struct device *dev, uint32_t ch_id, uint8_t slot)
