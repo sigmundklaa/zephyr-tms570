@@ -424,9 +424,10 @@ static int spi_tms570_transceive_dma(const struct device *dev, const struct spi_
                 status = spi_tms570_wait_dma(dev);
                 spi_tms570_dma_toggle(dev, false);
 
+                (void)dma_stop(data->dma_rx.dev, data->dma_rx.channel);
+                (void)dma_stop(data->dma_tx.dev, data->dma_tx.channel);
+
                 if (status != 0) {
-                        (void)dma_stop(data->dma_rx.dev, data->dma_rx.channel);
-                        (void)dma_stop(data->dma_tx.dev, data->dma_tx.channel);
                         break;
                 }
 
