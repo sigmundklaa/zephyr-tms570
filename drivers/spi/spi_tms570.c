@@ -230,9 +230,9 @@ static void spi_tms570_transfer(const struct device *dev)
         tx_byte = 0;
         if (spi_context_tx_on(&data->ctx)) {
                 tx_byte = *data->ctx.tx_buf;
-        }
 
-        spi_context_update_tx(&data->ctx, 1, 1);
+                spi_context_update_tx(&data->ctx, 1, 1);
+        }
 
         /* Write byte. Only pull upper 16 bits to not clear/set any flags accidentally */
         while ((sys_read16(ctrl_reg_base + BUF_OFFSET) & BIT(BUF_TXFULL_OFFSET)) != 0) {
@@ -246,9 +246,9 @@ static void spi_tms570_transfer(const struct device *dev)
 
         if (spi_context_rx_on(&data->ctx)) {
                 *data->ctx.rx_buf = rx_byte;
-        }
 
-        spi_context_update_rx(&data->ctx, 1, 1);
+                spi_context_update_rx(&data->ctx, 1, 1);
+        }
 }
 
 static int spi_tms570_transceive(const struct device *dev, const struct spi_config *spi_cfg,
@@ -430,8 +430,13 @@ static int spi_tms570_transceive_dma(const struct device *dev, const struct spi_
                         break;
                 }
 
-                spi_context_update_tx(&data->ctx, 1, len);
-                spi_context_update_rx(&data->ctx, 1, len);
+                if (spi_context_tx_on(&data->ctx)) {
+                        spi_context_update_tx(&data->ctx, 1, len);
+                }
+
+                if (spi_context_rx_on(&data->ctx)) {
+                        spi_context_update_rx(&data->ctx, 1, len);
+                }
         }
 
         spi_context_cs_control(&data->ctx, false);
