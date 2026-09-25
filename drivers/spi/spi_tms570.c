@@ -159,6 +159,10 @@ static int spi_tms570_configure(const struct device *dev, const struct spi_confi
                 return status;
         }
 
+        if (spi_cfg->frequency > clk_rate) {
+                return -EINVAL;
+        }
+
         /* Configure pins */
         sys_set_bits(ctrl_reg_base + PC0_OFFSET,
                      BIT(PC0_SIMOFUN_OFFSET) | BIT(PC0_SOMIFUN_OFFSET) | BIT(PC0_CLKFUN_OFFSET));
