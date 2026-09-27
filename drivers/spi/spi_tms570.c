@@ -233,7 +233,9 @@ static void spi_tms570_transfer(const struct device *dev)
 
         tx_byte = 0;
         if (spi_context_tx_on(&data->ctx)) {
-                tx_byte = *data->ctx.tx_buf;
+                if (spi_context_tx_buf_on(&data->ctx)) {
+                        tx_byte = *data->ctx.tx_buf;
+                }
 
                 spi_context_update_tx(&data->ctx, 1, 1);
         }
@@ -249,7 +251,9 @@ static void spi_tms570_transfer(const struct device *dev)
         rx_byte = sys_read8(ctrl_reg_base + BUF_RXDATA_BYTE_OFFSET) & BIT_MASK(8);
 
         if (spi_context_rx_on(&data->ctx)) {
-                *data->ctx.rx_buf = rx_byte;
+                if (spi_context_rx_buf_on(&data->ctx)) {
+                        *data->ctx.rx_buf = rx_byte;
+                }
 
                 spi_context_update_rx(&data->ctx, 1, 1);
         }
@@ -381,7 +385,7 @@ static int spi_tms570_transceive_dma(const struct device *dev, const struct spi_
         while (spi_context_tx_on(&data->ctx) || spi_context_rx_on(&data->ctx)) {
                 len = spi_context_max_continuous_chunk(&data->ctx);
 
-                if (spi_context_tx_on(&data->ctx)) {
+                if (spi_context_tx_buf_on(&data->ctx)) {
                         data->dma_tx.blk_config.source_address = (uint32_t)data->ctx.tx_buf;
                         data->dma_tx.blk_config.source_addr_adj = DMA_ADDR_ADJ_INCREMENT;
                 } else {
@@ -389,7 +393,7 @@ static int spi_tms570_transceive_dma(const struct device *dev, const struct spi_
                         data->dma_tx.blk_config.source_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
                 }
 
-                if (spi_context_rx_on(&data->ctx)) {
+                if (spi_context_rx_buf_on(&data->ctx)) {
                         data->dma_rx.blk_config.dest_address = (uint32_t)data->ctx.rx_buf;
                         data->dma_rx.blk_config.dest_addr_adj = DMA_ADDR_ADJ_INCREMENT;
                 } else {
