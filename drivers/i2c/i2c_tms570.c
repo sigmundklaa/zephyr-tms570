@@ -5,7 +5,7 @@
 #include <zephyr/devicetree.h>
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/drivers/pinctrl.h>
-#include <zephyr/sys_clock.h>
+#include <zephyr/sys/clock.h>
 #include <zephyr/logging/log.h>
 
 LOG_MODULE_REGISTER(i2c_tms570);
