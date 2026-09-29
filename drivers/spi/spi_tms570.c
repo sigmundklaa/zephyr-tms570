@@ -139,11 +139,11 @@ static int spi_tms570_configure(const struct device *dev, const struct spi_confi
 
         /* Some of this are supported by the hardware, but not yet implemented in this driver. */
         if (spi_cfg->operation &
-            (SPI_OP_MODE_SLAVE | SPI_HALF_DUPLEX | SPI_LOCK_ON | SPI_HOLD_ON_CS)) {
+            (SPI_OP_MODE_PERIPHERAL | SPI_HALF_DUPLEX | SPI_LOCK_ON | SPI_HOLD_ON_CS)) {
                 return -ENOTSUP;
         }
 
-        if (spi_cfg->slave >= MAX_SLAVES) {
+        if (spi_cfg->peripheral >= MAX_SLAVES) {
                 return -ENOTSUP;
         }
 
@@ -168,9 +168,9 @@ static int spi_tms570_configure(const struct device *dev, const struct spi_confi
                      BIT(PC0_SIMOFUN_OFFSET) | BIT(PC0_SOMIFUN_OFFSET) | BIT(PC0_CLKFUN_OFFSET));
         if (!spi_cfg->cs.cs_is_gpio) {
                 sys_write32(calc_cs_delay_reg(spi_cfg, clk_rate), ctrl_reg_base + DELAY_OFFSET);
-                sys_set_bit(ctrl_reg_base + PC0_OFFSET, PC0_SCSFUN_OFFSET + spi_cfg->slave);
+                sys_set_bit(ctrl_reg_base + PC0_OFFSET, PC0_SCSFUN_OFFSET + spi_cfg->peripheral);
         } else {
-                sys_clear_bit(ctrl_reg_base + PC0_OFFSET, PC0_SCSFUN_OFFSET + spi_cfg->slave);
+                sys_clear_bit(ctrl_reg_base + PC0_OFFSET, PC0_SCSFUN_OFFSET + spi_cfg->peripheral);
         }
 
         /* Set master bit, clock mode */
@@ -189,14 +189,14 @@ static int spi_tms570_configure(const struct device *dev, const struct spi_confi
 
         /* Set CS active state. TODO: Is this correct? */
         if (spi_cfg->operation & SPI_CS_ACTIVE_HIGH) {
-                sys_clear_bit(ctrl_reg_base + CSDEF_OFFSET, spi_cfg->slave);
+                sys_clear_bit(ctrl_reg_base + CSDEF_OFFSET, spi_cfg->peripheral);
         } else {
-                sys_set_bit(ctrl_reg_base + CSDEF_OFFSET, spi_cfg->slave);
+                sys_set_bit(ctrl_reg_base + CSDEF_OFFSET, spi_cfg->peripheral);
         }
 
         /* Slave number, format index. Only write 16 bits so we don't attempt
          * to inititate transfer. */
-        dat1 = 1 << (DAT1_CSNR_OFFSET + spi_cfg->slave);
+        dat1 = 1 << (DAT1_CSNR_OFFSET + spi_cfg->peripheral);
         dat1 |= FMT_IDX << DAT1_DFSEL_OFFSET;
         sys_write16(dat1, ctrl_reg_base + DAT1_OFFSET);
 
