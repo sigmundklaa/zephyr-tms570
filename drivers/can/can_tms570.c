@@ -667,20 +667,6 @@ static int can_tms570_get_state(const struct device *dev, enum can_state *state,
         return 0;
 }
 
-static void can_tms570_set_state_change_callback(const struct device *dev,
-                                                 can_state_change_callback_t callback,
-                                                 void *user_data)
-{
-        struct can_tms570_data *data = dev->data;
-
-        K_SPINLOCK(&data->lock) {
-                if (!data->can_data.started) {
-                        data->can_data.state_change_cb = callback;
-                        data->can_data.state_change_cb_user_data = user_data;
-                }
-        }
-}
-
 static int can_tms570_get_core_clock(const struct device *dev, uint32_t *rate)
 {
         const struct can_tms570_cfg *cfg = dev->config;
@@ -709,13 +695,9 @@ static void can_tms570_status_update_isr(const struct device *dev)
 
         if (state != CAN_STATE_STOPPED && state != data->can_state) {
                 data->can_state = state;
+                err_cnt = can_tms570_get_err_count(dev);
 
-                if (data->can_data.state_change_cb != NULL) {
-                        err_cnt = can_tms570_get_err_count(dev);
-
-                        data->can_data.state_change_cb(dev, data->can_state, err_cnt,
-                                                       data->can_data.state_change_cb_user_data);
-                }
+                can_fire_state_change_callbacks(dev, data->can_state, err_cnt);
         }
 }
 
@@ -782,7 +764,6 @@ static DEVICE_API(can, can_tms570_api) = {
         .add_rx_filter = can_tms570_add_rx_filter,
         .remove_rx_filter = can_tms570_remove_rx_filter,
         .get_state = can_tms570_get_state,
-        .set_state_change_callback = can_tms570_set_state_change_callback,
         .get_core_clock = can_tms570_get_core_clock,
         .get_max_filters = can_tms570_get_max_filters,
         .timing_min =
@@ -813,6 +794,7 @@ static int can_tms570_init(const struct device *dev)
 
         (void)k_sem_init(&data->ifsem, IF_REG_MAX, IF_REG_MAX);
         (void)k_sem_init(&data->txsem, MSG_TX_MAX, MSG_TX_MAX);
+        sys_slist_init(&data->can_data.state_change_callbacks);
 
         cfg->irq_connect();
 
