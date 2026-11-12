@@ -748,7 +748,7 @@ static void can_tms570_isr(const struct device *dev)
         if (is_tx) {
                 tx_done(dev, msg_id, ifreg, 0);
         } else {
-                rx_deliver(dev, msg_id, ifreg);
+                rx_deliver(dev, ifreg, msg_id);
         }
 
         ifreg_give(dev, ifreg);
