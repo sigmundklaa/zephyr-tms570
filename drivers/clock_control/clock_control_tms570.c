@@ -32,11 +32,13 @@ BUILD_ASSERT(DRV_FREQ == CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC,
 #define CDDISCLR_OFFSET (0x44) /* Clock domain disable clear register */
 #define GHVSRC_OFFSET   (0x48) /* CLK G,H,V and V2 source register */
 #define RCLKSRC_OFFSET  (0x50) /* Clock source of RTI */
+#define CSVSTAT_OFFSET  (0x54) /* Clock source valid status register */
 #define PLLCTL1_OFFSET  (0x70) /* PLL Control 1, contains NF, NR, R for PLL 1 */
 #define PLLCTL2_OFFSET  (0x74) /* PLL Control 2, contains OD for PLL1 */
 #define CLKCNTL_OFFSET  (0xd0) /* Clock control register */
 
 #define PLL_DISABLE (1 << 1)
+#define PLL_VALID   (1 << 1)
 #define CLKSRC_PLL  (1 << 0) /* Clock source PLL */
 
 #define PERIENA_BIT (1 << 8)
@@ -64,6 +66,9 @@ static int pll_init(void)
 
         /* Unset the PLL disable bit in the clock source disable register */
         sys_clear_bits(reg_base + CSDIS_OFFSET, PLL_DISABLE);
+
+        while (!(sys_read32(reg_base + CSVSTAT_OFFSET) & PLL_VALID)) {
+        }
 
         /* Set current source to PLL */
         sys_set_bits(reg_base + GHVSRC_OFFSET, CLKSRC_PLL);
