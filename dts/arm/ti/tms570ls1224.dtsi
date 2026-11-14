@@ -40,10 +40,11 @@
             reg = <0>;
             #clock-cells = <0>;
 
+            /* 32 MHz from a 16 MHz oscillator, with a 320 MHz VCO */
             nr = <1>;
-            nf = <2>;
+            nf = <20>;
             od = <1>;
-            r = <1>;
+            r = <10>;
         };
     };
 
