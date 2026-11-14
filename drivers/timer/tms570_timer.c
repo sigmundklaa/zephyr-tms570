@@ -71,7 +71,7 @@ static int set_udc0(void)
                 return ret;
         }
 
-        rate /= CONFIG_SYS_CLOCK_TICKS_PER_SEC / (CPU0 + 1);
+        rate /= (CPU0 + 1) * CONFIG_SYS_CLOCK_TICKS_PER_SEC;
         sys_write32(rate, DRV_REG + UDC0_OFFSET);
 
         return 0;

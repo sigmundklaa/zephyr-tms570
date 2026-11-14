@@ -142,17 +142,9 @@ static unsigned int clock_ratio(unsigned int domain, uintptr_t reg_base)
                 return vclk_ratio(reg_base);
         case TMS570_CLK_VCLK2:
                 return vclk2_ratio(reg_base);
-        case TMS570_CLK_RTI: {
-                /* RTI is derived from VCLK by default. The TRM states that
-                 * clock source *other* than VCLK require the RTI prescaler
-                 * to ensure that the frequency of RTI to be at least
-                 * 3 times less than VCLK.
-                 * As RCLKSRC can only hold dividers that are multiple of twos,
-                 * 3 is rounded up to 4.
-                 *
-                 * This is documented in section 10.5.2.3 of the TRM. */
-                return vclk_ratio(reg_base) * 4;
-        }
+        case TMS570_CLK_RTI:
+                /* Only support VCLK as clock source, which RCLKSRC selects after reset */
+                return vclk_ratio(reg_base);
         }
 
         CODE_UNREACHABLE;
