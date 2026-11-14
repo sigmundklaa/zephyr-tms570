@@ -53,6 +53,7 @@ LOG_MODULE_REGISTER(i2c_tms570);
 #define SCD_BIT   (1 << 5)
 #define TXRDY_BIT (1 << 4)
 #define RXRDY_BIT (1 << 3)
+#define ARDY_BIT  (1 << 2)
 #define NACK_BIT  (1 << 1)
 #define AL_BIT    (1 << 0)
 
@@ -385,6 +386,21 @@ static int tx_msg(const struct device *dev, struct i2c_msg *msg)
 
         if (msg->flags & I2C_MSG_STOP) {
                 sys_set_bits(reg_base + MDR_OFFSET, STP_BIT);
+                return 0;
+        }
+
+        /* Wait for the transfer to complete before the next message */
+        while (!(sys_read32(reg_base + STR_OFFSET) & ARDY_BIT)) {
+                if (is_nack(reg_base)) {
+                        return -EIO;
+                } else if (sys_timepoint_expired(timeout)) {
+                        return -ETIMEDOUT;
+                }
+        }
+
+        /* A NACK sets ARDY too */
+        if (is_nack(reg_base)) {
+                return -EIO;
         }
 
         return 0;
