@@ -15,6 +15,7 @@ static const unsigned int drv_clock_id = DT_INST_CLOCKS_CELL(0, clk_id);
 static const struct device *const clk_ctrl = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(0));
 
 #define GCTRL_OFFSET      (0x00) /* Global control register */
+#define FRC0_OFFSET       (0x10) /* Free running counter 0 */
 #define CPU0_OFFSET       (0x18) /* Compare up counter 0 */
 #define UDC0_OFFSET       (0x54) /* Update compare 0 */
 #define SET_INTENA_OFFSET (0x80) /* Set interrupt enable */
@@ -26,10 +27,9 @@ static const struct device *const clk_ctrl = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(0
 #define INT0EN  (1 << 0) /* Interrupt 0 enable */
 #define INT0CLR (1 << 0) /* Clear interrupt 0 */
 
-#define CYC_PER_TICK (sys_clock_hw_cycles_per_sec() / CONFIG_SYS_CLOCK_TICKS_PER_SEC)
-
-static struct k_spinlock ticks_lock;
-static volatile uint64_t ticks;
+static struct k_spinlock cycles_lock;
+static uint32_t frc0_last;
+static uint32_t frc0_wraps;
 
 /* Tickless mode is not supported, and so this function can return 0 as
  * announce is called periodically on every interrupt anyways*/
@@ -47,15 +47,29 @@ void sys_clock_set_timeout(uint32_t ticks_set, bool idle)
 
 uint32_t sys_clock_cycle_get_32(void)
 {
-        return (uint32_t)sys_clock_cycle_get_64();
+        return sys_read32(DRV_REG + FRC0_OFFSET);
+}
+
+/* Must be called at least once per wrap of FRC0, with cycles_lock held */
+static uint64_t cycles_extend(void)
+{
+        uint32_t frc0 = sys_read32(DRV_REG + FRC0_OFFSET);
+
+        if (frc0 < frc0_last) {
+                frc0_wraps++;
+        }
+
+        frc0_last = frc0;
+
+        return ((uint64_t)frc0_wraps << 32) | frc0;
 }
 
 uint64_t sys_clock_cycle_get_64(void)
 {
         uint64_t ret = 0;
 
-        K_SPINLOCK(&ticks_lock) {
-                ret = ticks;
+        K_SPINLOCK(&cycles_lock) {
+                ret = cycles_extend();
         }
 
         return ret;
@@ -63,6 +77,7 @@ uint64_t sys_clock_cycle_get_64(void)
 
 static int set_udc0(void)
 {
+        extern unsigned int z_clock_hw_cycles_per_sec;
         uint32_t rate;
         int ret;
 
@@ -71,7 +86,11 @@ static int set_udc0(void)
                 return ret;
         }
 
-        rate /= (CPU0 + 1) * CONFIG_SYS_CLOCK_TICKS_PER_SEC;
+        /* FRC0 counts at RTICLK / (CPUC0 + 1) */
+        rate /= CPU0 + 1;
+        z_clock_hw_cycles_per_sec = rate;
+
+        rate /= CONFIG_SYS_CLOCK_TICKS_PER_SEC;
         sys_write32(rate, DRV_REG + UDC0_OFFSET);
 
         return 0;
@@ -81,8 +100,8 @@ static void timer_isr(void *arg)
 {
         ARG_UNUSED(arg);
 
-        K_SPINLOCK(&ticks_lock) {
-                ticks += k_ticks_to_cyc_floor32(1);
+        K_SPINLOCK(&cycles_lock) {
+                (void)cycles_extend();
         }
 
         /* Clear interrupt flag */
