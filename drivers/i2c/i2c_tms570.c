@@ -79,6 +79,9 @@ LOG_MODULE_REGISTER(i2c_tms570);
 #define TIMEOUT_MSEC   (K_MSEC(10))
 #define RETRY_ATTEMPTS (10)
 
+/* Bus free time between a stop and a start in standard mode (UM10204) */
+#define BUS_FREE_TIME_US (5)
+
 struct i2c_tms570_cfg {
         DEVICE_MMIO_ROM;
 
@@ -259,6 +262,37 @@ static int xfer_start(uintptr_t reg_base, bool restart)
 }
 
 /**
+ * @brief Generate the stop condition that a NACK leaves to the controller.
+ *
+ * @param reg_base
+ * @return int
+ * @retval -EIO The stop condition was sent
+ * @retval -ETIMEDOUT Timed out waiting for the bus to be released
+ */
+static int xfer_nack_stop(uintptr_t reg_base)
+{
+        k_timepoint_t timeout = sys_timepoint_calc(TIMEOUT_MSEC);
+
+        sys_set_bits(reg_base + MDR_OFFSET, STP_BIT);
+        sys_write32(NACK_BIT, reg_base + STR_OFFSET);
+
+        while (is_bus_busy(reg_base)) {
+                if (sys_timepoint_expired(timeout)) {
+                        return -ETIMEDOUT;
+                }
+        }
+
+        sys_write32(SCD_BIT, reg_base + STR_OFFSET);
+
+        /* The reset that follows clears the bus state, so the controller no
+         * longer holds a new start off for the bus free time.
+         */
+        k_busy_wait(BUS_FREE_TIME_US);
+
+        return -EIO;
+}
+
+/**
  * @brief End transfer, waiting for bus busy bit and MST bit to clear.
  *
  * These must be cleared before initiating another transfer, otherwise the next
@@ -275,6 +309,10 @@ static int xfer_end(uintptr_t reg_base)
         k_timepoint_t timeout = sys_timepoint_calc(TIMEOUT_MSEC);
 
         while (!is_stop(reg_base) || is_bus_busy(reg_base) || is_controller(reg_base)) {
+                if (is_nack(reg_base)) {
+                        return xfer_nack_stop(reg_base);
+                }
+
                 if (sys_timepoint_expired(timeout)) {
                         return -ETIMEDOUT;
                 }
@@ -449,6 +487,10 @@ static int xfer_msg(const struct device *dev, struct i2c_msg *msg, uint16_t addr
         return status;
 
 error:
+        if (is_nack(reg_base)) {
+                (void)xfer_nack_stop(reg_base);
+        }
+
         mdr_reset(reg_base);
 
         return status;
