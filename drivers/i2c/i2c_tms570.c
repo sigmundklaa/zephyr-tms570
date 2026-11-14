@@ -460,7 +460,11 @@ static int i2c_tms570_transfer(const struct device *dev, struct i2c_msg *msgs, u
                 }
         }
 
-        intr_enable(reg_base, IRQ_EN_MASK);
+#if defined(CONFIG_I2C_TARGET)
+        if (data->target_cfg != NULL) {
+                intr_enable(reg_base, IRQ_EN_MASK);
+        }
+#endif
         (void)k_mutex_unlock(&data->lock);
 
         return status;
