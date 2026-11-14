@@ -55,39 +55,43 @@ static int gpio_tms570_pin_configure(const struct device *dev, gpio_pin_t pin, g
 {
         const struct gpio_tms570_port_cfg *cfg = dev->config;
 
-        if (flags & GPIO_INPUT) {
-                sys_clear_bit(cfg->reg_base + PORT_DIR_OFFSET, pin);
-
-                if (flags & (GPIO_PULL_UP | GPIO_PULL_DOWN)) {
-                        if (flags & GPIO_PULL_UP) {
-                                sys_set_bit(cfg->reg_base + PORT_PSL_OFFSET, pin);
-                        } else if (flags & GPIO_PULL_DOWN) {
-                                sys_clear_bit(cfg->reg_base + PORT_PSL_OFFSET, pin);
-                        }
-
-                        sys_clear_bit(cfg->reg_base + PORT_PULDIS_OFFSET, pin);
+        if (flags & (GPIO_PULL_UP | GPIO_PULL_DOWN)) {
+                if (flags & GPIO_PULL_UP) {
+                        sys_set_bit(cfg->reg_base + PORT_PSL_OFFSET, pin);
                 } else {
-                        sys_set_bit(cfg->reg_base + PORT_PULDIS_OFFSET, pin);
-                }
-        } else if (flags & GPIO_OUTPUT) {
-                sys_set_bit(cfg->reg_base + PORT_DIR_OFFSET, pin);
-
-                if (flags & GPIO_SINGLE_ENDED) {
-                        if (flags & GPIO_LINE_OPEN_SOURCE) {
-                                return -ENOTSUP;
-                        }
-
-                        sys_set_bit(cfg->reg_base + PORT_PDR_OFFSET, pin);
-                } else {
-                        sys_clear_bit(cfg->reg_base + PORT_PDR_OFFSET, pin);
+                        sys_clear_bit(cfg->reg_base + PORT_PSL_OFFSET, pin);
                 }
 
-                if (flags & GPIO_OUTPUT_INIT_LOW) {
-                        sys_write32(BIT(pin), cfg->reg_base + PORT_DCLR_OFFSET);
-                } else {
-                        sys_write32(BIT(pin), cfg->reg_base + PORT_DSET_OFFSET);
-                }
+                sys_clear_bit(cfg->reg_base + PORT_PULDIS_OFFSET, pin);
+        } else {
+                sys_set_bit(cfg->reg_base + PORT_PULDIS_OFFSET, pin);
         }
+
+        /* Input only. A pin that is both input and output is set up as an
+         * output, as DIN reads the pin either way.
+         */
+        if (!(flags & GPIO_OUTPUT)) {
+                sys_clear_bit(cfg->reg_base + PORT_DIR_OFFSET, pin);
+                return 0;
+        }
+
+        if (flags & GPIO_SINGLE_ENDED) {
+                if (flags & GPIO_LINE_OPEN_SOURCE) {
+                        return -ENOTSUP;
+                }
+
+                sys_set_bit(cfg->reg_base + PORT_PDR_OFFSET, pin);
+        } else {
+                sys_clear_bit(cfg->reg_base + PORT_PDR_OFFSET, pin);
+        }
+
+        if (flags & GPIO_OUTPUT_INIT_LOW) {
+                sys_write32(BIT(pin), cfg->reg_base + PORT_DCLR_OFFSET);
+        } else {
+                sys_write32(BIT(pin), cfg->reg_base + PORT_DSET_OFFSET);
+        }
+
+        sys_set_bit(cfg->reg_base + PORT_DIR_OFFSET, pin);
 
         return 0;
 }
